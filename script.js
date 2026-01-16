@@ -178,13 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 1. Force Uppercase for consistent mapping (Big Text only supports upper)
         // If big text is on, we generally want uppercase.
-        if (checkUppercase.checked || checkBigText.checked) {
+        if (checkUppercase.checked || checkBigText.checked || checkFourCol.checked || checkAsciiOutline.checked) {
             text = text.toUpperCase();
         }
 
         let formatted = "";
 
-        if (checkBigText.checked) {
+        if (checkBigText.checked || checkFourCol.checked || checkAsciiOutline.checked) {
             // Big Text Mode
             formatted = generateBigText(text);
         } else {
