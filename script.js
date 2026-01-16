@@ -132,16 +132,16 @@ document.addEventListener('DOMContentLoaded', () => {
         'B': ["█▀▄", "█▀▄", "▀▀ "],
         'C': ["▄▀▀", "█  ", "▀▄▄"],
         'D': ["█▀▄", "█ █", "▀▀ "],
-        'E': ["█▀▀", "╠═ ", "▀▀▀"],
-        'F': ["█▀▀", "╠═ ", "▀  "],
+        'E': ["█▀▀", "█▀▀", "▀▀▀"],
+        'F': ["█▀▀", "█▀▀", "▀  "],
         'G': ["▄▀▀", "█ █", "▀▄█"],
         'H': ["█ █", "█▀█", "▀ ▀"],
         'I': [" █ ", " █ ", " ▀ "],
         'J': ["  █", "  █", "▀▀ "],
         'K': ["█▄ ", "█▀▄", "▀ ▀"],
         'L': ["█  ", "█  ", "▀▀▀"],
-        'M': ["▛▀▜", "█ █", "▀ ▀"],
-        'N': ["▛▀█", "█ █", "▀ ▀"],
+        'M': ["█▀█", "█ █", "▀ ▀"],
+        'N': ["█▀█", "█ █", "▀ ▀"],
         'O': ["▄▀▄", "█ █", "▀▄▀"],
         'P': ["█▀▄", "█▀▀", "▀  "],
         'Q': ["▄▀▄", "█ █", "▀▄█"],
@@ -225,14 +225,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // The spacer between words is handled by the space character itself which is width 3
             
             let wordWidth = 0;
-            for(let char of word) {
+            for(let j = 0; j < word.length; j++) {
+                const char = word[j];
                 const map = C64_BIG_FONT[char] || C64_BIG_FONT['?'];
-                // If not found, use ? or skip. Let's use ? width (3)
                 const charWidth = map ? map[0].length : 3;
-                wordWidth += charWidth + 1; // +1 for spacing between letters
+                
+                wordWidth += charWidth;
+                
+                // Add spacing between chars (same as drawing logic)
+                if (j < word.length - 1) {
+                    wordWidth += 1;
+                }
             }
-            // Remove last spacer of the word? No, keep simple.
-
+            
             // Check if word fits
             if (currentLineWidth + wordWidth > availableWidth && currentLineWidth > 0) {
                 // Push current line
@@ -241,9 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentLineWidth = 0;
             }
 
-            // If word is massive (wider than screen), we might need to split it, 
-            // but for now let's assume it fits or clips.
-            
             currentLineWords.push(word);
             currentLineWidth += wordWidth;
         });
@@ -279,13 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     bigLine3 += map[2];
 
                     // Add spacing between letters (1 column)
-                    // Only if it fits? 
-                    // Let's add a space column
-                    if (i < word.length - 1 || word === ' ') { 
-                         // Don't add spacing after the last letter of a word? 
-                         // Or do we? 
-                         // "RIPRAGGI" -> R I P...
-                         // Usually spacing is good.
+                    if (i < word.length - 1) { 
                          bigLine1 += " ";
                          bigLine2 += " ";
                          bigLine3 += " ";
