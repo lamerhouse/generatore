@@ -312,22 +312,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Big Text Helper ---
 
     function generateBigText(text, config) {
-        const availableWidth = config.border ? SCREEN_WIDTH - 2 : SCREEN_WIDTH;
-        const charWidth = config.fourCol ? 4 : 3;
+        // BBS Mode: 4 columns strict, Block fill, Professional alignment
+        const isBbsPro = config.bbs;
+        const charWidth = (config.fourCol || isBbsPro) ? 4 : 3;
         const letterSpacing = 1;
+
+        const hasBorder = config.border;
+        const availableWidth = hasBorder ? SCREEN_WIDTH - 2 : SCREEN_WIDTH;
 
         const lines = [];
         const words = text.split(/(\s+)/);
         let currentLineWords = [];
         let currentLineWidth = 0;
 
-        // Word wrapping logic
         words.forEach(word => {
             let wordWidth = 0;
             for (let j = 0; j < word.length; j++) {
-                const char = word[j];
-                // If not in font, it will be skipped or need handling?
-                // Just count width for now.
                 wordWidth += charWidth;
                 if (j < word.length - 1) wordWidth += letterSpacing;
             }
@@ -344,57 +344,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (currentLineWords.length > 0) lines.push(currentLineWords);
 
-        const borderChars = getBorderChars(config.bbs);
+        const borderChars = getBorderChars(isBbsPro);
         const outputBuffer = [];
 
-        if (config.border) {
+        if (hasBorder) {
             outputBuffer.push(borderChars.tl + borderChars.h.repeat(availableWidth) + borderChars.tr);
         }
 
         lines.forEach(lineWords => {
             let bigLine1 = "", bigLine2 = "", bigLine3 = "";
 
-            lineWords.forEach(word => {
+            lineWords.forEach((word, wIdx) => {
                 for (let i = 0; i < word.length; i++) {
                     const char = word[i];
                     const map = C64_BIG_FONT[char] || C64_BIG_FONT['?'];
 
-                    // Helpers for rows
                     const scale = (row) => {
                         if (charWidth === 3) return row;
-                        // 3 -> 4 mapping
+
+                        // BBS Pro: Symmetric stretch (0, 1, 1, 2)
+                        if (isBbsPro) {
+                            return row[0] + row[1] + row[1] + row[2];
+                        }
+                        // Default 4-col
                         let out = "";
                         for (let k = 0; k < 4; k++) out += row[Math.floor(k * 3 / 4)];
                         return out;
                     };
 
-                    const fill = /[A-Z0-9]/.test(char) ? char : 'X';
-                    const fillFn = (row) => row.replace(/[^ ]/g, fill);
+                    const fillFn = (row) => {
+                        if (!isBbsPro) return row;
+                        return row;
+                    };
 
                     let r0 = scale(map[0]);
                     let r1 = scale(map[1]);
                     let r2 = scale(map[2]);
 
-                    if (config.fourCol || config.bbs) {
-                        // Apply fill logic
-                        r0 = fillFn(r0);
-                        r1 = fillFn(r1);
-                        r2 = fillFn(r2);
+                    // Old 4-col logic: only use fill if NOT isBbsPro (since BbsPro keeps shapes but scales)
+                    if (config.fourCol && !isBbsPro) {
+                        const fill = /[A-Z0-9]/.test(char) ? char : 'X';
+                        const toFill = (r, f) => {
+                            let o = "";
+                            for (let k = 0; k < r.length; k++) o += (r[k] === ' ') ? ' ' : f;
+                            return o;
+                        };
+                        r0 = toFill(r0, fill);
+                        r1 = toFill(r1, fill);
+                        r2 = toFill(r2, fill);
                     }
 
                     bigLine1 += r0;
                     bigLine2 += r1;
                     bigLine3 += r2;
 
-                    // Spacing
                     if (i < word.length - 1 && letterSpacing > 0) {
                         const sp = " ".repeat(letterSpacing);
                         bigLine1 += sp; bigLine2 += sp; bigLine3 += sp;
                     }
                 }
+
+                if (wIdx < lineWords.length - 1) {
+                    const sp = " ".repeat(charWidth);
+                    bigLine1 += sp; bigLine2 += sp; bigLine3 += sp;
+                }
             });
 
-            if (config.asciiOutline) {
+            if (config.asciiOutline && !isBbsPro) {
                 const outlined = outlineRows([bigLine1, bigLine2, bigLine3]);
                 bigLine1 = outlined[0]; bigLine2 = outlined[1]; bigLine3 = outlined[2];
             }
@@ -416,11 +432,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 outputBuffer.push(config.border ? borderChars.v + rowStr + borderChars.v : rowStr);
             });
 
-            // Gap between lines
-            if (config.border) {
+            if (hasBorder) {
+                // Optimization: vertical spacing is good for readability
+                // BBS Pro: maybe compact? Let's stick to standard.
                 outputBuffer.push(borderChars.v + " ".repeat(availableWidth) + borderChars.v);
             } else {
-                outputBuffer.push(""); // Empty line
+                outputBuffer.push("");
             }
         });
 
