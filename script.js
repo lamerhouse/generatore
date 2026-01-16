@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkBigText = document.getElementById('big-text-mode');
     const checkCenter = document.getElementById('center-mode');
     const checkFourCol = document.getElementById('four-col-mode');
+    const checkAsciiOutline = document.getElementById('ascii-outline-mode');
     const imgUpload = document.getElementById('img-upload');
 
     // C64 is 40 columns wide
@@ -215,6 +216,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return out;
     }
+    
+    function toAlphaNumeric(row, fillChar) {
+        let out = "";
+        for (let i = 0; i < row.length; i++) {
+            const ch = row[i];
+            if (ch === ' ') out += ' ';
+            else if (ch === '▀') out += '1';
+            else if (ch === '▄') out += '0';
+            else out += fillChar;
+        }
+        return out;
+    }
+    
+    function toAsciiOutline(row) {
+        let out = "";
+        for (let i = 0; i < row.length; i++) {
+            const ch = row[i];
+            if (ch === ' ') out += ' ';
+            else if (ch === '▀') out += '-';
+            else if (ch === '▄') out += '_';
+            else out += '|'; // '█' -> vertical stroke
+        }
+        return out;
+    }
 
     function generateBigText(text) {
         // We need to wrap words so they fit in 40 columns (SCREEN_WIDTH)
@@ -292,9 +317,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     const r0 = scaleRow(map[0], charWidth);
                     const r1 = scaleRow(map[1], charWidth);
                     const r2 = scaleRow(map[2], charWidth);
-                    bigLine1 += r0;
-                    bigLine2 += r1;
-                    bigLine3 += r2;
+                    if (checkAsciiOutline.checked) {
+                        bigLine1 += toAsciiOutline(r0);
+                        bigLine2 += toAsciiOutline(r1);
+                        bigLine3 += toAsciiOutline(r2);
+                    } else if (checkFourCol.checked) {
+                        const fill = /[A-Z0-9]/.test(char) ? char : 'X';
+                        bigLine1 += toAlphaNumeric(r0, fill);
+                        bigLine2 += toAlphaNumeric(r1, fill);
+                        bigLine3 += toAlphaNumeric(r2, fill);
+                    } else {
+                        bigLine1 += r0;
+                        bigLine2 += r1;
+                        bigLine3 += r2;
+                    }
 
                     // Add spacing between letters (1 column)
                     if (i < word.length - 1 && letterSpacing > 0) { 
@@ -458,6 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBigText.addEventListener('change', processText);
     checkCenter.addEventListener('change', processText);
     checkFourCol.addEventListener('change', processText);
+    checkAsciiOutline.addEventListener('change', processText);
 
     // Initial run
     processText();
