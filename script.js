@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lineWords.forEach(word => {
                 for (let i = 0; i < word.length; i++) {
                     const char = word[i];
-                    const map = C64_BIG_FONT[char] || C64_BIG_FONT[' ']; // Default to space if unknown
+                    const map = C64_BIG_FONT[char] || C64_BIG_FONT['?']; // Default to ? if unknown to match width calc
                     
                     // Add character parts
                     bigLine1 += map[0];
