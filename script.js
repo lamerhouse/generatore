@@ -8,9 +8,122 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkBorder = document.getElementById('border-mode');
     const checkBlock = document.getElementById('block-mode');
     const checkBigText = document.getElementById('big-text-mode');
+    const checkCenter = document.getElementById('center-mode');
+    const imgUpload = document.getElementById('img-upload');
 
     // C64 is 40 columns wide
     const SCREEN_WIDTH = 40;
+
+    // Image Upload Handling
+    imgUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const ascii = convertImageToAscii(img);
+                inputText.value = ""; // Clear input text as we are using image mode
+                outputText.value = ascii;
+                showStatus("IMMAGINE CONVERTITA! READY.");
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    function convertImageToAscii(img) {
+        // We use a canvas to read pixel data
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const hasBorder = checkBorder.checked;
+        const width = hasBorder ? SCREEN_WIDTH - 2 : SCREEN_WIDTH;
+        
+        // We use 1x2 block characters (Upper Half Block ▀)
+        // So vertical resolution is double the character rows.
+        // We want final aspect ratio to be roughly correct.
+        // C64 pixels are roughly square-ish (wide pixels).
+        // Char aspect ratio is approx 1:1 in our grid (VT323).
+        // Using ▀ means 1 char = 2 vertical pixels.
+        // So we need height = width * (imgHeight/imgWidth).
+        // But since we pack 2 vertical pixels into 1 char, we resize height to 2 * rows.
+        
+        // Let's fix width to 'width' columns.
+        const scale = width / img.width;
+        // Aspect ratio correction: Text chars are usually higher than wide (e.g. 8x16 or 10x20).
+        // But in VT323 they are roughly 0.6 aspect?
+        // Let's assume 1:1 for simplicity or adjust.
+        // Standard ASCII art correction is often 0.5 width.
+        // But here we use Block Elements which are square-ish.
+        
+        const canvasWidth = width;
+        // We map 2 vertical pixels to 1 char.
+        // So canvas height should be even number ideally.
+        const canvasHeight = Math.floor(canvasWidth * (img.height / img.width)); 
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        
+        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        const data = ctx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+        
+        let output = "";
+        
+        // Border Top
+        const borderChars = { tl: '╔', tr: '╗', bl: '╚', br: '╝', h: '═', v: '║' };
+        if (hasBorder) {
+            output += borderChars.tl + borderChars.h.repeat(width) + borderChars.tr + "\n";
+        }
+
+        // Process 2 rows at a time
+        for (let y = 0; y < canvasHeight; y += 2) {
+            if (hasBorder) output += borderChars.v;
+            
+            for (let x = 0; x < canvasWidth; x++) {
+                // Get pixel (x, y) - Top Half
+                const i1 = (y * canvasWidth + x) * 4;
+                const r1 = data[i1], g1 = data[i1+1], b1 = data[i1+2];
+                const bri1 = (r1 + g1 + b1) / 3;
+                
+                // Get pixel (x, y+1) - Bottom Half
+                let bri2 = 0;
+                if (y + 1 < canvasHeight) {
+                    const i2 = ((y + 1) * canvasWidth + x) * 4;
+                    const r2 = data[i2], g2 = data[i2+1], b2 = data[i2+2];
+                    bri2 = (r2 + g2 + b2) / 3;
+                }
+                
+                // Threshold for black/white (Simple monochrome)
+                // C64 is high contrast.
+                const threshold = 128;
+                const top = bri1 > threshold;
+                const bottom = bri2 > threshold;
+                
+                // Construct char
+                // Top=1, Bot=1 -> Full Block █
+                // Top=1, Bot=0 -> Upper Block ▀
+                // Top=0, Bot=1 -> Lower Block ▄
+                // Top=0, Bot=0 -> Space
+                
+                if (top && bottom) output += "█";
+                else if (top && !bottom) output += "▀";
+                else if (!top && bottom) output += "▄";
+                else output += " ";
+            }
+            
+            if (hasBorder) output += borderChars.v + "\n";
+            else output += "\n";
+        }
+
+        // Border Bottom
+        if (hasBorder) {
+            output += borderChars.bl + borderChars.h.repeat(width) + borderChars.br;
+        }
+        
+        return output;
+    }
 
     // Big Font Definition (3x3 blocks)
     // Uses C64/Block elements: ▄ ▀ █ ▌ ▐
@@ -188,8 +301,20 @@ document.addEventListener('DOMContentLoaded', () => {
             [bigLine1, bigLine2, bigLine3].forEach(row => {
                 // Truncate if too long (just in case)
                 let rowStr = row.substring(0, availableWidth);
-                // Pad if short
-                rowStr = rowStr.padEnd(availableWidth, " ");
+                
+                // Alignment logic
+                if (checkCenter.checked) {
+                    // Center the string within availableWidth
+                    const padding = availableWidth - rowStr.length;
+                    if (padding > 0) {
+                        const padLeft = Math.floor(padding / 2);
+                        const padRight = padding - padLeft;
+                        rowStr = " ".repeat(padLeft) + rowStr + " ".repeat(padRight);
+                    }
+                } else {
+                    // Pad if short (Left Align)
+                    rowStr = rowStr.padEnd(availableWidth, " ");
+                }
                 
                 if (hasBorder) {
                     output += borderChars.v + rowStr + borderChars.v + "\n";
@@ -318,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBorder.addEventListener('change', processText);
     checkBlock.addEventListener('change', processText);
     checkBigText.addEventListener('change', processText);
+    checkCenter.addEventListener('change', processText);
 
     // Initial run
     processText();

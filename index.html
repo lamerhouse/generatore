@@ -32,6 +32,11 @@
                     <textarea id="input-text" placeholder="Scrivi il tuo testo qui..."></textarea>
                 </div>
 
+                <div class="input-group" style="margin-top: 15px;">
+                    <label style="font-size: 0.9rem; font-weight: 600; color: #a0a0a0; margin-bottom: 5px; display: block;">OPPURE CARICA IMMAGINE (ASCII ART)</label>
+                    <input type="file" id="img-upload" accept="image/*" style="width: 100%; color: #fff;">
+                </div>
+
                 <div class="settings-grid">
                     <div class="setting-item">
                         <label class="switch">
@@ -63,6 +68,14 @@
                             <span class="slider"></span>
                         </label>
                         <span class="label-text">TESTO GIGANTE (C64)</span>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="center-mode">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="label-text">ALLINEA AL CENTRO</span>
                     </div>
                 </div>
             </section>
