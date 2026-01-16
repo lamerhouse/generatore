@@ -229,6 +229,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return out;
     }
     
+    function toAlphaFill(row, fillChar) {
+        let out = "";
+        for (let i = 0; i < row.length; i++) {
+            const ch = row[i];
+            out += (ch === ' ') ? ' ' : fillChar;
+        }
+        return out;
+    }
+    
     function toAsciiOutline(row) {
         let out = "";
         for (let i = 0; i < row.length; i++) {
@@ -240,6 +249,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return out;
     }
+    
+    function outlineRows(rows) {
+        const h = rows.length;
+        const w = rows[0].length;
+        const mask = Array.from({length: h}, (_, r) => 
+            Array.from({length: w}, (_, c) => rows[r][c] !== ' ')
+        );
+        const out = Array.from({length: h}, () => Array(w).fill(' '));
+        
+        for (let r = 0; r < h; r++) {
+            for (let c = 0; c < w; c++) {
+                if (!mask[r][c]) continue;
+                const left = c > 0 ? mask[r][c-1] : false;
+                const right = c + 1 < w ? mask[r][c+1] : false;
+                const up = r > 0 ? mask[r-1][c] : false;
+                const down = r + 1 < h ? mask[r+1][c] : false;
+                
+                const horiz = !left || !right;
+                const vert = !up || !down;
+                
+                let ch = '.';
+                if (horiz && vert) ch = '+';
+                else if (horiz) ch = '-';
+                else if (vert) ch = '|';
+                
+                out[r][c] = ch;
+            }
+        }
+        return out.map(arr => arr.join(''));
+    }
 
     function generateBigText(text) {
         // We need to wrap words so they fit in 40 columns (SCREEN_WIDTH)
@@ -249,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasBorder = checkBorder.checked;
         const availableWidth = hasBorder ? SCREEN_WIDTH - 2 : SCREEN_WIDTH;
         const charWidth = checkFourCol.checked ? 4 : 3;
-        const letterSpacing = checkFourCol.checked ? 0 : 1;
+        const letterSpacing = checkFourCol.checked ? 1 : 1;
         
         const lines = []; // Array of strings (the text lines)
         
@@ -317,20 +356,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const r0 = scaleRow(map[0], charWidth);
                     const r1 = scaleRow(map[1], charWidth);
                     const r2 = scaleRow(map[2], charWidth);
-                    if (checkAsciiOutline.checked) {
-                        bigLine1 += toAsciiOutline(r0);
-                        bigLine2 += toAsciiOutline(r1);
-                        bigLine3 += toAsciiOutline(r2);
-                    } else if (checkFourCol.checked) {
-                        const fill = /[A-Z0-9]/.test(char) ? char : 'X';
-                        bigLine1 += toAlphaNumeric(r0, fill);
-                        bigLine2 += toAlphaNumeric(r1, fill);
-                        bigLine3 += toAlphaNumeric(r2, fill);
-                    } else {
-                        bigLine1 += r0;
-                        bigLine2 += r1;
-                        bigLine3 += r2;
+                    const fill = /[A-Z0-9]/.test(char) ? char : 'X';
+                    let rr0 = r0, rr1 = r1, rr2 = r2;
+                    if (checkFourCol.checked) {
+                        rr0 = toAlphaFill(rr0, fill);
+                        rr1 = toAlphaFill(rr1, fill);
+                        rr2 = toAlphaFill(rr2, fill);
                     }
+                    bigLine1 += rr0;
+                    bigLine2 += rr1;
+                    bigLine3 += rr2;
 
                     // Add spacing between letters (1 column)
                     if (i < word.length - 1 && letterSpacing > 0) { 
@@ -341,6 +376,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
+            
+            if (checkAsciiOutline.checked) {
+                const outlined = outlineRows([bigLine1, bigLine2, bigLine3]);
+                bigLine1 = outlined[0];
+                bigLine2 = outlined[1];
+                bigLine3 = outlined[2];
+            }
 
             // Trim lines to fit or pad?
             // If wrapping logic was correct, they should fit.
