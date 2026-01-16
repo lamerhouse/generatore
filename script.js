@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkBlock = document.getElementById('block-mode');
     const checkBigText = document.getElementById('big-text-mode');
     const checkCenter = document.getElementById('center-mode');
+    const checkFourCol = document.getElementById('four-col-mode');
     const imgUpload = document.getElementById('img-upload');
 
     // C64 is 40 columns wide
@@ -203,6 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         outputText.value = formatted;
     }
+    
+    function scaleRow(row, targetWidth) {
+        const srcWidth = row.length;
+        if (targetWidth === srcWidth) return row;
+        let out = "";
+        for (let i = 0; i < targetWidth; i++) {
+            const idx = Math.floor(i * srcWidth / targetWidth);
+            out += row[idx];
+        }
+        return out;
+    }
 
     function generateBigText(text) {
         // We need to wrap words so they fit in 40 columns (SCREEN_WIDTH)
@@ -211,6 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const hasBorder = checkBorder.checked;
         const availableWidth = hasBorder ? SCREEN_WIDTH - 2 : SCREEN_WIDTH;
+        const charWidth = checkFourCol.checked ? 4 : 3;
+        const letterSpacing = checkFourCol.checked ? 0 : 1;
         
         const lines = []; // Array of strings (the text lines)
         
@@ -228,13 +242,12 @@ document.addEventListener('DOMContentLoaded', () => {
             for(let j = 0; j < word.length; j++) {
                 const char = word[j];
                 const map = C64_BIG_FONT[char] || C64_BIG_FONT['?'];
-                const charWidth = map ? map[0].length : 3;
-                
-                wordWidth += charWidth;
+                const cw = charWidth;
+                wordWidth += cw;
                 
                 // Add spacing between chars (same as drawing logic)
                 if (j < word.length - 1) {
-                    wordWidth += 1;
+                    wordWidth += letterSpacing;
                 }
             }
             
@@ -276,15 +289,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     const map = C64_BIG_FONT[char] || C64_BIG_FONT['?']; // Default to ? if unknown to match width calc
                     
                     // Add character parts
-                    bigLine1 += map[0];
-                    bigLine2 += map[1];
-                    bigLine3 += map[2];
+                    const r0 = scaleRow(map[0], charWidth);
+                    const r1 = scaleRow(map[1], charWidth);
+                    const r2 = scaleRow(map[2], charWidth);
+                    bigLine1 += r0;
+                    bigLine2 += r1;
+                    bigLine3 += r2;
 
                     // Add spacing between letters (1 column)
-                    if (i < word.length - 1) { 
-                         bigLine1 += " ";
-                         bigLine2 += " ";
-                         bigLine3 += " ";
+                    if (i < word.length - 1 && letterSpacing > 0) { 
+                         const sp = " ".repeat(letterSpacing);
+                         bigLine1 += sp;
+                         bigLine2 += sp;
+                         bigLine3 += sp;
                     }
                 }
             });
@@ -440,6 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBlock.addEventListener('change', processText);
     checkBigText.addEventListener('change', processText);
     checkCenter.addEventListener('change', processText);
+    checkFourCol.addEventListener('change', processText);
 
     // Initial run
     processText();
