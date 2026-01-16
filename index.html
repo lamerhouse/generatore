@@ -35,6 +35,13 @@
                 <div class="input-group" style="margin-top: 15px;">
                     <label style="font-size: 0.9rem; font-weight: 600; color: #a0a0a0; margin-bottom: 5px; display: block;">OPPURE CARICA IMMAGINE (ASCII ART)</label>
                     <input type="file" id="img-upload" accept="image/*" style="width: 100%; color: #fff;">
+                    <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center;">
+                        <span style="font-size: 0.85rem; color: #a0a0a0; font-weight: 600;">STILE ASCII IMMAGINE</span>
+                        <select id="img-ascii-style" style="flex: 1; padding: 8px; background-color: #151515; color: #fff; border: 1px solid #333; border-radius: 6px;">
+                            <option value="outline">OUTLINE</option>
+                            <option value="shade">SHADE</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="settings-grid">
@@ -84,6 +91,14 @@
                             <span class="slider"></span>
                         </label>
                         <span class="label-text">ASCII OUTLINE</span>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="bbs-mode">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="label-text">BBS ASCII (3 COLONNE)</span>
                     </div>
                     
                     <div class="setting-item">

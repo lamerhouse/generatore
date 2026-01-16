@@ -11,7 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkCenter = document.getElementById('center-mode');
     const checkFourCol = document.getElementById('four-col-mode');
     const checkAsciiOutline = document.getElementById('ascii-outline-mode');
+    const checkBbsMode = document.getElementById('bbs-mode');
+    const imgAsciiStyle = document.getElementById('img-ascii-style');
     const imgUpload = document.getElementById('img-upload');
+    let lastImage = null;
 
     // C64 is 40 columns wide
     const SCREEN_WIDTH = 40;
@@ -25,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = (event) => {
             const img = new Image();
             img.onload = () => {
+                lastImage = img;
                 const ascii = convertImageToAscii(img);
                 inputText.value = ""; // Clear input text as we are using image mode
                 outputText.value = ascii;
@@ -34,36 +38,27 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         reader.readAsDataURL(file);
     });
+    
+    function reprocessImageIfAny() {
+        if (lastImage) {
+            const ascii = convertImageToAscii(lastImage);
+            outputText.value = ascii;
+        } else {
+            processText();
+        }
+    }
 
     function convertImageToAscii(img) {
-        // We use a canvas to read pixel data
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
         const hasBorder = checkBorder.checked;
         const width = hasBorder ? SCREEN_WIDTH - 2 : SCREEN_WIDTH;
-        
-        // We use 1x2 block characters (Upper Half Block ▀)
-        // So vertical resolution is double the character rows.
-        // We want final aspect ratio to be roughly correct.
-        // C64 pixels are roughly square-ish (wide pixels).
-        // Char aspect ratio is approx 1:1 in our grid (VT323).
-        // Using ▀ means 1 char = 2 vertical pixels.
-        // So we need height = width * (imgHeight/imgWidth).
-        // But since we pack 2 vertical pixels into 1 char, we resize height to 2 * rows.
-        
-        // Let's fix width to 'width' columns.
-        const scale = width / img.width;
-        // Aspect ratio correction: Text chars are usually higher than wide (e.g. 8x16 or 10x20).
-        // But in VT323 they are roughly 0.6 aspect?
-        // Let's assume 1:1 for simplicity or adjust.
-        // Standard ASCII art correction is often 0.5 width.
-        // But here we use Block Elements which are square-ish.
+        const style = imgAsciiStyle ? imgAsciiStyle.value : 'outline';
         
         const canvasWidth = width;
-        // We map 2 vertical pixels to 1 char.
-        // So canvas height should be even number ideally.
-        const canvasHeight = Math.floor(canvasWidth * (img.height / img.width)); 
+        const charAspect = style === 'shade' ? 0.5 : 0.55;
+        const canvasHeight = Math.max(1, Math.floor(canvasWidth * (img.height / img.width) * charAspect)); 
         
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
@@ -73,53 +68,54 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let output = "";
         
-        // Border Top
         const borderChars = { tl: '╔', tr: '╗', bl: '╚', br: '╝', h: '═', v: '║' };
         if (hasBorder) {
             output += borderChars.tl + borderChars.h.repeat(width) + borderChars.tr + "\n";
         }
 
-        // Process 2 rows at a time
-        for (let y = 0; y < canvasHeight; y += 2) {
+        for (let y = 0; y < canvasHeight; y++) {
             if (hasBorder) output += borderChars.v;
             
             for (let x = 0; x < canvasWidth; x++) {
-                // Get pixel (x, y) - Top Half
-                const i1 = (y * canvasWidth + x) * 4;
-                const r1 = data[i1], g1 = data[i1+1], b1 = data[i1+2];
-                const bri1 = (r1 + g1 + b1) / 3;
-                
-                // Get pixel (x, y+1) - Bottom Half
-                let bri2 = 0;
-                if (y + 1 < canvasHeight) {
-                    const i2 = ((y + 1) * canvasWidth + x) * 4;
-                    const r2 = data[i2], g2 = data[i2+1], b2 = data[i2+2];
-                    bri2 = (r2 + g2 + b2) / 3;
+                const idx = (y * canvasWidth + x) * 4;
+                const r = data[idx], g = data[idx+1], b = data[idx+2];
+                const br = (r + g + b) / 3;
+                if (style === 'shade') {
+                    const ramp = " .:-=+*#%@";
+                    const id = Math.min(ramp.length - 1, Math.floor(br / 256 * ramp.length));
+                    output += ramp[id];
+                } else {
+                    const il = (y * canvasWidth + Math.max(0, x - 1)) * 4;
+                    const ir = (y * canvasWidth + Math.min(canvasWidth - 1, x + 1)) * 4;
+                    const iu = (Math.max(0, y - 1) * canvasWidth + x) * 4;
+                    const idn = (Math.min(canvasHeight - 1, y + 1) * canvasWidth + x) * 4;
+                    const bl = (data[il] + data[il+1] + data[il+2]) / 3;
+                    const brg = (data[ir] + data[ir+1] + data[ir+2]) / 3;
+                    const bu = (data[iu] + data[iu+1] + data[iu+2]) / 3;
+                    const bd = (data[idn] + data[idn+1] + data[idn+2]) / 3;
+                    const dx = brg - bl;
+                    const dy = bd - bu;
+                    const mag = Math.sqrt(dx*dx + dy*dy);
+                    const t1 = 25, t2 = 60;
+                    if (mag < t1) output += " ";
+                    else if (mag < t2) output += ".";
+                    else {
+                        const ang = Math.atan2(dy, dx);
+                        const a = Math.abs(ang);
+                        let ch = "-";
+                        if (Math.abs(a - Math.PI/2) < Math.PI/8) ch = "|";
+                        else if (ang > 0 && a >= Math.PI/8 && a <= 3*Math.PI/8) ch = "/";
+                        else if (ang < 0 && a >= Math.PI/8 && a <= 3*Math.PI/8) ch = "\\";
+                        output += ch;
+                    }
                 }
-                
-                // Threshold for black/white (Simple monochrome)
-                // C64 is high contrast.
-                const threshold = 128;
-                const top = bri1 > threshold;
-                const bottom = bri2 > threshold;
-                
-                // Construct char
-                // Top=1, Bot=1 -> Full Block █
-                // Top=1, Bot=0 -> Upper Block ▀
-                // Top=0, Bot=1 -> Lower Block ▄
-                // Top=0, Bot=0 -> Space
-                
-                if (top && bottom) output += "█";
-                else if (top && !bottom) output += "▀";
-                else if (!top && bottom) output += "▄";
-                else output += " ";
             }
             
-            if (hasBorder) output += borderChars.v + "\n";
-            else output += "\n";
+            let rowEnd = "";
+            if (hasBorder) rowEnd = borderChars.v + "\n"; else rowEnd = "\n";
+            output += rowEnd;
         }
 
-        // Border Bottom
         if (hasBorder) {
             output += borderChars.bl + borderChars.h.repeat(width) + borderChars.br;
         }
@@ -178,13 +174,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 1. Force Uppercase for consistent mapping (Big Text only supports upper)
         // If big text is on, we generally want uppercase.
-        if (checkUppercase.checked || checkBigText.checked || checkFourCol.checked || checkAsciiOutline.checked) {
+        if (checkUppercase.checked || checkBigText.checked || checkFourCol.checked || checkAsciiOutline.checked || checkBbsMode.checked) {
             text = text.toUpperCase();
         }
 
         let formatted = "";
 
-        if (checkBigText.checked || checkFourCol.checked || checkAsciiOutline.checked) {
+        if (checkBigText.checked || checkFourCol.checked || checkAsciiOutline.checked || checkBbsMode.checked) {
             // Big Text Mode
             formatted = generateBigText(text);
         } else {
@@ -288,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasBorder = checkBorder.checked;
         const availableWidth = hasBorder ? SCREEN_WIDTH - 2 : SCREEN_WIDTH;
         const charWidth = checkFourCol.checked ? 4 : 3;
-        const letterSpacing = checkFourCol.checked ? 1 : 1;
+        const letterSpacing = 1;
         
         const lines = []; // Array of strings (the text lines)
         
@@ -335,7 +331,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let output = "";
         
         // Border Top
-        const borderChars = { tl: '╔', tr: '╗', bl: '╚', br: '╝', h: '═', v: '║' };
+        const borderChars = checkBbsMode.checked 
+            ? { tl: '+', tr: '+', bl: '+', br: '+', h: '-', v: '|' }
+            : { tl: '╔', tr: '╗', bl: '╚', br: '╝', h: '═', v: '║' };
 
         if (hasBorder) {
             output += borderChars.tl + borderChars.h.repeat(availableWidth) + borderChars.tr + "\n";
@@ -358,10 +356,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const r2 = scaleRow(map[2], charWidth);
                     const fill = /[A-Z0-9]/.test(char) ? char : 'X';
                     let rr0 = r0, rr1 = r1, rr2 = r2;
-                    if (checkFourCol.checked) {
-                        rr0 = toAlphaFill(rr0, fill);
-                        rr1 = toAlphaFill(rr1, fill);
-                        rr2 = toAlphaFill(rr2, fill);
+                    if (checkFourCol.checked || checkBbsMode.checked) {
+                        const fc = checkBbsMode.checked ? fill : fill;
+                        rr0 = toAlphaFill(rr0, fc);
+                        rr1 = toAlphaFill(rr1, fc);
+                        rr2 = toAlphaFill(rr2, fc);
                     }
                     bigLine1 += rr0;
                     bigLine2 += rr1;
@@ -531,12 +530,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Real-time processing
     inputText.addEventListener('input', processText);
     checkUppercase.addEventListener('change', processText);
-    checkBorder.addEventListener('change', processText);
+    checkBorder.addEventListener('change', reprocessImageIfAny);
     checkBlock.addEventListener('change', processText);
     checkBigText.addEventListener('change', processText);
-    checkCenter.addEventListener('change', processText);
+    checkCenter.addEventListener('change', reprocessImageIfAny);
+    if (imgAsciiStyle) imgAsciiStyle.addEventListener('change', reprocessImageIfAny);
     checkFourCol.addEventListener('change', processText);
     checkAsciiOutline.addEventListener('change', processText);
+    checkBbsMode.addEventListener('change', processText);
 
     // Initial run
     processText();
