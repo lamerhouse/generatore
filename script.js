@@ -68,7 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let output = "";
         
-        const borderChars = { tl: '╔', tr: '╗', bl: '╚', br: '╝', h: '═', v: '║' };
+        const borderChars = checkBbsMode.checked 
+            ? { tl: '+', tr: '+', bl: '+', br: '+', h: '-', v: '|' }
+            : { tl: '╔', tr: '╗', bl: '╚', br: '╝', h: '═', v: '║' };
         if (hasBorder) {
             output += borderChars.tl + borderChars.h.repeat(width) + borderChars.tr + "\n";
         }
@@ -82,6 +84,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const br = (r + g + b) / 3;
                 if (style === 'shade') {
                     const ramp = " .:-=+*#%@";
+                    const id = Math.min(ramp.length - 1, Math.floor(br / 256 * ramp.length));
+                    output += ramp[id];
+                } else if (style === 'blocks') {
+                    // C64 Block style using density
+                    const ramp = " ░▒▓█";
                     const id = Math.min(ramp.length - 1, Math.floor(br / 256 * ramp.length));
                     output += ramp[id];
                 } else {
@@ -180,23 +187,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let formatted = "";
 
-        if (checkBigText.checked || checkFourCol.checked || checkAsciiOutline.checked || checkBbsMode.checked) {
-            // Big Text Mode
+        if (checkBigText.checked || checkFourCol.checked || checkAsciiOutline.checked) {
+            // Big Text Mode (BBS Mode is now Standard ASCII only)
             formatted = generateBigText(text);
         } else {
             // Standard Mode
             
             // Block Simulation
-            if (checkBlock.checked) {
+            if (checkBlock.checked && !checkBbsMode.checked) {
                 text = simulateBlocks(text);
             }
 
             // Wrap and Border
             const hasBorder = checkBorder.checked;
+            const isBbs = checkBbsMode.checked;
             const contentWidth = hasBorder ? SCREEN_WIDTH - 2 : SCREEN_WIDTH;
             
             const lines = wrapText(text, contentWidth);
-            formatted = formatOutput(lines, hasBorder, contentWidth);
+            formatted = formatOutput(lines, hasBorder, contentWidth, isBbs);
         }
 
         outputText.value = formatted;
@@ -479,11 +487,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return processedLines;
     }
 
-    function formatOutput(lines, hasBorder, width) {
+    function formatOutput(lines, hasBorder, width, isBbs = false) {
         // PETSCII-like Box Drawing Characters
-        const borderChars = {
-            tl: '╔', tr: '╗', bl: '╚', br: '╝', h: '═', v: '║'
-        };
+        const borderChars = isBbs
+            ? { tl: '+', tr: '+', bl: '+', br: '+', h: '-', v: '|' }
+            : { tl: '╔', tr: '╗', bl: '╚', br: '╝', h: '═', v: '║' };
 
         let output = "";
 
@@ -537,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (imgAsciiStyle) imgAsciiStyle.addEventListener('change', reprocessImageIfAny);
     checkFourCol.addEventListener('change', processText);
     checkAsciiOutline.addEventListener('change', processText);
-    checkBbsMode.addEventListener('change', processText);
+    checkBbsMode.addEventListener('change', reprocessImageIfAny);
 
     // Initial run
     processText();
