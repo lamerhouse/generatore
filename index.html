@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
     <!-- Modern UI Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div class="app-container">
         <header class="main-header">
@@ -17,7 +19,9 @@
                 <span class="c64-bar"></span>
                 <h1>C64 TEXT <span class="highlight">GENERATOR</span></h1>
             </div>
-            <p class="subtitle">PETSCII ARTWORK STUDIO<br><span style="font-size: 1.5em; font-weight: bold; opacity: 0.9; margin-top: 5px; display: block; color: var(--accent-light);">GIUSYMO89</span></p>
+            <p class="subtitle">PETSCII ARTWORK STUDIO<br><span
+                    style="font-size: 1.5em; font-weight: bold; opacity: 0.9; margin-top: 5px; display: block; color: var(--accent-light);">GIUSYMO89</span>
+            </p>
         </header>
 
         <main class="workspace">
@@ -27,17 +31,20 @@
                     <h2>INPUT SOURCE</h2>
                     <div class="status-indicator online"></div>
                 </div>
-                
+
                 <div class="input-group">
                     <textarea id="input-text" placeholder="Scrivi il tuo testo qui..."></textarea>
                 </div>
 
                 <div class="input-group" style="margin-top: 15px;">
-                    <label style="font-size: 0.9rem; font-weight: 600; color: #a0a0a0; margin-bottom: 5px; display: block;">OPPURE CARICA IMMAGINE (ASCII ART)</label>
+                    <label
+                        style="font-size: 0.9rem; font-weight: 600; color: #a0a0a0; margin-bottom: 5px; display: block;">OPPURE
+                        CARICA IMMAGINE (ASCII ART)</label>
                     <input type="file" id="img-upload" accept="image/*" style="width: 100%; color: #fff;">
                     <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center;">
                         <span style="font-size: 0.85rem; color: #a0a0a0; font-weight: 600;">STILE ASCII IMMAGINE</span>
-                        <select id="img-ascii-style" style="flex: 1; padding: 8px; background-color: #151515; color: #fff; border: 1px solid #333; border-radius: 6px;">
+                        <select id="img-ascii-style"
+                            style="flex: 1; padding: 8px; background-color: #151515; color: #fff; border: 1px solid #333; border-radius: 6px;">
                             <option value="outline">OUTLINE</option>
                             <option value="shade">SHADE</option>
                             <option value="blocks">BLOCKS (C64)</option>
@@ -46,6 +53,15 @@
                 </div>
 
                 <div class="settings-grid">
+                    <div class="setting-item"
+                        style="border: 2px solid var(--accent-light); box-shadow: 0 0 10px rgba(186, 220, 88, 0.3);">
+                        <label class="switch">
+                            <input type="checkbox" id="bbs-mode">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="label-text">MODALITÀ BBS (PRO)</span>
+                    </div>
+
                     <div class="setting-item">
                         <label class="switch">
                             <input type="checkbox" id="uppercase-mode" checked>
@@ -53,7 +69,7 @@
                         </label>
                         <span class="label-text">FORZA MAIUSCOLO</span>
                     </div>
-                    
+
                     <div class="setting-item">
                         <label class="switch">
                             <input type="checkbox" id="border-mode" checked>
@@ -77,7 +93,7 @@
                         </label>
                         <span class="label-text">TESTO GIGANTE (C64)</span>
                     </div>
-                    
+
                     <div class="setting-item">
                         <label class="switch">
                             <input type="checkbox" id="four-col-mode">
@@ -85,7 +101,7 @@
                         </label>
                         <span class="label-text">ASCII 4 COLONNE</span>
                     </div>
-                    
+
                     <div class="setting-item">
                         <label class="switch">
                             <input type="checkbox" id="ascii-outline-mode">
@@ -93,15 +109,7 @@
                         </label>
                         <span class="label-text">ASCII OUTLINE</span>
                     </div>
-                    
-                    <div class="setting-item">
-                        <label class="switch">
-                            <input type="checkbox" id="bbs-mode">
-                            <span class="slider"></span>
-                        </label>
-                        <span class="label-text">MODALITÀ BBS (ASCII)</span>
-                    </div>
-                    
+
                     <div class="setting-item">
                         <label class="switch">
                             <input type="checkbox" id="center-mode">
@@ -120,7 +128,7 @@
                         <div class="screen-content">
                             <div class="c64-header-text">
                                 **** COMMODORE 64 BASIC V2 ****<br>
-                                64K RAM SYSTEM  38911 BASIC BYTES FREE<br><br>
+                                64K RAM SYSTEM 38911 BASIC BYTES FREE<br><br>
                                 READY.
                             </div>
                             <textarea id="output-text" readonly spellcheck="false"></textarea>
@@ -129,7 +137,7 @@
                     <div class="monitor-logo">COMMODORE</div>
                     <div class="power-led"></div>
                 </div>
-                
+
                 <div class="action-bar">
                     <button id="copy-btn" class="primary-btn">
                         <span class="icon">💾</span> COPIA OUTPUT
@@ -138,11 +146,12 @@
                 </div>
             </section>
         </main>
-        
+
         <footer class="main-footer">
             <p>&copy; 2026 C64 Generator Tool. Retro Engineering.</p>
         </footer>
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>
