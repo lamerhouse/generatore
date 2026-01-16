@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C64 Generator - Professional Edition</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- C64 Font -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <!-- Modern UI Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="main-header">
+            <div class="logo">
+                <span class="c64-bar"></span>
+                <h1>C64 TEXT <span class="highlight">GENERATOR</span></h1>
+            </div>
+            <p class="subtitle">PETSCII ARTWORK STUDIO</p>
+        </header>
+
+        <main class="workspace">
+            <!-- Left Panel: Controls & Input -->
+            <section class="panel control-panel">
+                <div class="panel-header">
+                    <h2>INPUT SOURCE</h2>
+                    <div class="status-indicator online"></div>
+                </div>
+                
+                <div class="input-group">
+                    <textarea id="input-text" placeholder="Scrivi il tuo testo qui..."></textarea>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="uppercase-mode" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="label-text">FORZA MAIUSCOLO</span>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="border-mode" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="label-text">AGGIUNGI BORDO</span>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="block-mode">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="label-text">MODALITÀ BLOCCHI</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Monitor Preview -->
+            <section class="monitor-wrapper">
+                <div class="monitor-bezel">
+                    <div class="monitor-screen">
+                        <div class="crt-effects"></div>
+                        <div class="screen-content">
+                            <div class="c64-header-text">
+                                **** COMMODORE 64 BASIC V2 ****<br>
+                                64K RAM SYSTEM  38911 BASIC BYTES FREE<br><br>
+                                READY.
+                            </div>
+                            <textarea id="output-text" readonly spellcheck="false"></textarea>
+                        </div>
+                    </div>
+                    <div class="monitor-logo">COMMODORE</div>
+                    <div class="power-led"></div>
+                </div>
+                
+                <div class="action-bar">
+                    <button id="copy-btn" class="primary-btn">
+                        <span class="icon">💾</span> COPIA OUTPUT
+                    </button>
+                    <div id="status-msg" class="status-display">READY.</div>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="main-footer">
+            <p>&copy; 2026 C64 Generator Tool. Retro Engineering.</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
